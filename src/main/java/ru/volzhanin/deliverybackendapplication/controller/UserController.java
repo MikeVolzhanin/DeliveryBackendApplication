@@ -9,7 +9,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import ru.volzhanin.deliverybackendapplication.service.UserService;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @RequestMapping("/users")
@@ -25,6 +24,7 @@ public class UserController {
     public ResponseEntity<User> authenticatedUser(){
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         User currentUser = (User) authentication.getPrincipal();
+        System.out.println(currentUser.getEmail());
         return ResponseEntity.ok(currentUser);
     }
 
