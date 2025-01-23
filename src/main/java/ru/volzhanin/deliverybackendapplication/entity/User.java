@@ -19,11 +19,20 @@ public class User implements UserDetails {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
-    @Column(unique = true, nullable = false)
+    @Column(nullable = false)
     private String username;
 
     @Column(unique = true, nullable = false)
+    private String surname;
+
+    @Column(nullable = false)
+    private String middleName;
+
+    @Column(unique = true, nullable = false)
     private String email;
+
+    @Column(unique = true, nullable = false)
+    private String phoneNumber;
 
     @Column(nullable = false)
     private String password;
@@ -36,9 +45,12 @@ public class User implements UserDetails {
     @Column(name = "verification_expiration")
     private LocalDateTime verificationCodeExpiresAt;
 
-    public User(String username, String email, String password) {
+    public User(String username, String surname, String middleName, String email, String phoneNumber, String password) {
         this.username = username;
+        this.surname = surname;
+        this.middleName = middleName;
         this.email = email;
+        this.phoneNumber = phoneNumber;
         this.password = password;
     }
 
