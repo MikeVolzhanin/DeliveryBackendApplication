@@ -1,5 +1,6 @@
 package ru.volzhanin.deliverybackendapplication.controller;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -11,8 +12,8 @@ import ru.volzhanin.deliverybackendapplication.service.UserService;
 
 import java.util.List;
 
-@RequestMapping("/users")
 @RestController
+@RequestMapping("/users")
 public class UserController {
     private final UserService userService;
 
@@ -24,12 +25,11 @@ public class UserController {
     public ResponseEntity<User> authenticatedUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         User currentUser = (User) authentication.getPrincipal();
-        System.out.println(currentUser.getEmail());
         return ResponseEntity.ok(currentUser);
     }
 
     @GetMapping("/")
-    public ResponseEntity<List<User>> allUsers() {
+    public ResponseEntity<?> allUsers() {
         List<User> users = userService.allUsers();
         return ResponseEntity.ok(users);
     }

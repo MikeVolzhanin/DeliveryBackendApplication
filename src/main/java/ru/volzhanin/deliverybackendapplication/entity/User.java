@@ -29,7 +29,7 @@ public class User implements UserDetails {
     private String middleName;
 
     @Column(unique = true, nullable = false)
-    private String email;
+    private String firstName;
 
     @Column(unique = true, nullable = false)
     private String phoneNumber;
@@ -45,11 +45,11 @@ public class User implements UserDetails {
     @Column(name = "verification_expiration")
     private LocalDateTime verificationCodeExpiresAt;
 
-    public User(String username, String surname, String middleName, String email, String phoneNumber, String password) {
+    public User(String username, String surname, String middleName, String firstName, String phoneNumber, String password) {
         this.username = username;
         this.surname = surname;
         this.middleName = middleName;
-        this.email = email;
+        this.firstName = firstName;
         this.phoneNumber = phoneNumber;
         this.password = password;
     }

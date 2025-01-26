@@ -30,7 +30,7 @@ public class AuthenticationService {
     }
 
     public User signup(RegisterUserDto input) {
-        User user = new User(input.getUsername(), input.getSurname(), input.getMiddleName(), input.getEmail(), input.getPhoneNumber(), passwordEncoder.encode(input.getPassword()));
+        User user = new User(input.getEmail(), input.getSurname(), input.getMiddleName(), input.getFirstName(), input.getPhoneNumber(), passwordEncoder.encode(input.getPassword()));
         user.setVerificationCode(generateVerificationCode());
         user.setVerificationCodeExpiresAt(LocalDateTime.now().plusMinutes(15));
         user.setEnabled(false);
@@ -39,7 +39,7 @@ public class AuthenticationService {
     }
 
     public User authenticate(LoginUserDto input) {
-        User user = userRepository.findByEmail(input.getEmail())
+        User user = userRepository.findByUsername(input.getEmail())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         if (!user.isEnabled()) {
@@ -57,7 +57,7 @@ public class AuthenticationService {
     }
 
     public void verifyUser(VerifyUserDto input) {
-        Optional<User> optionalUser = userRepository.findByEmail(input.getEmail());
+        Optional<User> optionalUser = userRepository.findByUsername(input.getEmail());
 
         if (optionalUser.isPresent()) {
             User user = optionalUser.get();
@@ -78,7 +78,7 @@ public class AuthenticationService {
     }
 
     public void resendVerificationCode(String email) {
-        Optional<User> optionalUser = userRepository.findByEmail(email);
+        Optional<User> optionalUser = userRepository.findByUsername(email);
         if (optionalUser.isPresent()) {
             User user = optionalUser.get();
             if (user.isEnabled()) {
@@ -110,7 +110,7 @@ public class AuthenticationService {
                 + "</html>";
 
         try {
-            emailService.sendVerificationEmail(user.getEmail(), subject, htmlMessage);
+            emailService.sendVerificationEmail(user.getUsername(), subject, htmlMessage);
         } catch (MessagingException e) {
             e.printStackTrace();
         }
