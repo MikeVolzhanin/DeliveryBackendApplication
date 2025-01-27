@@ -45,6 +45,9 @@ public class User implements UserDetails {
     @Column(name = "verification_expiration")
     private LocalDateTime verificationCodeExpiresAt;
 
+    @OneToOne(mappedBy = "user")
+    private RefreshToken refreshToken;
+
     public User(String username, String surname, String middleName, String firstName, String phoneNumber, String password) {
         this.username = username;
         this.surname = surname;

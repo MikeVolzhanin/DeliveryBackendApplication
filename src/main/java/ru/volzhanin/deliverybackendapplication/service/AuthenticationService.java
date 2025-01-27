@@ -3,8 +3,12 @@ package ru.volzhanin.deliverybackendapplication.service;
 import jakarta.mail.MessagingException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.volzhanin.deliverybackendapplication.dto.LoginUserDto;
 import ru.volzhanin.deliverybackendapplication.dto.RegisterUserDto;
 import ru.volzhanin.deliverybackendapplication.dto.VerifyUserDto;
@@ -14,6 +18,7 @@ import ru.volzhanin.deliverybackendapplication.entity.User;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 @Service
 public class AuthenticationService {
@@ -114,6 +119,13 @@ public class AuthenticationService {
         } catch (MessagingException e) {
             e.printStackTrace();
         }
+    }
+
+    @Transactional
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        return userRepository.findByUsername(username).orElseThrow(() -> new UsernameNotFoundException(
+                String.format("Пользлватель '%s' не найден", username)
+        ));
     }
 
     private String generateVerificationCode() {
