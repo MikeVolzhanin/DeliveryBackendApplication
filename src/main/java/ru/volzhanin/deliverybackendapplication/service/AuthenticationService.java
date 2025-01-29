@@ -35,21 +35,21 @@ public class AuthenticationService {
     private final RefreshTokenService refreshTokenService;
 
     public ResponseEntity<?> signup(RegisterUserDto input) {
-        User user = User.builder()
-                .firstName(input.getFirstName())
-                .surname(input.getSurname())
-                .middleName(input.getSurname())
-                .username(input.getEmail())
-                .phoneNumber(input.getPhoneNumber())
-                .password(input.getPassword())
-                .build();
+        User user = new User(
+                input.getEmail(),
+                input.getSurname(),
+                input.getMiddleName(),
+                input.getFirstName(),
+                input.getPhoneNumber(),
+                input.getPassword()
+        );
 
         user.setVerificationCode(generateVerificationCode());
         user.setVerificationCodeExpiresAt(LocalDateTime.now().plusMinutes(15));
         user.setEnabled(false);
 
         if (userRepository.findByUsername(user.getUsername()).isPresent())
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>("User already exists", HttpStatus.BAD_REQUEST);
 
         sendVerificationEmail(user);
 
