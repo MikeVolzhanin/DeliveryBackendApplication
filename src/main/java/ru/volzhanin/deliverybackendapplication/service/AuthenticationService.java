@@ -43,6 +43,7 @@ public class AuthenticationService {
         if (userRepository.findByUsername(user.getUsername()).isPresent())
             return HttpStatus.BAD_REQUEST;
         sendVerificationEmail(user);
+        userRepository.save(user);
         return HttpStatus.OK;
     }
 
