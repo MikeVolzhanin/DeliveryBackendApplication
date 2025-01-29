@@ -19,7 +19,7 @@ public class User implements UserDetails {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
-    @Column(nullable = false)
+    @Column(unique = true, nullable = false)
     private String username;
 
     @Column(unique = true, nullable = false)
@@ -28,7 +28,7 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private String middleName;
 
-    @Column(unique = true, nullable = false)
+    @Column(nullable = false)
     private String firstName;
 
     @Column(unique = true, nullable = false)

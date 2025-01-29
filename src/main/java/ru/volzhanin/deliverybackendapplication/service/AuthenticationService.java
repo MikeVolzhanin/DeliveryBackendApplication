@@ -1,6 +1,7 @@
 package ru.volzhanin.deliverybackendapplication.service;
 
 import jakarta.mail.MessagingException;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -34,13 +35,16 @@ public class AuthenticationService {
         this.emailService = emailService;
     }
 
-    public User signup(RegisterUserDto input) {
+    public HttpStatus signup(RegisterUserDto input) {
         User user = new User(input.getEmail(), input.getSurname(), input.getMiddleName(), input.getFirstName(), input.getPhoneNumber(), passwordEncoder.encode(input.getPassword()));
         user.setVerificationCode(generateVerificationCode());
         user.setVerificationCodeExpiresAt(LocalDateTime.now().plusMinutes(15));
         user.setEnabled(false);
+        if (userRepository.findByUsername(user.getUsername()).isPresent())
+            return HttpStatus.BAD_REQUEST;
         sendVerificationEmail(user);
-        return userRepository.save(user);
+        userRepository.save(user);
+        return HttpStatus.OK;
     }
 
     public User authenticate(LoginUserDto input) {

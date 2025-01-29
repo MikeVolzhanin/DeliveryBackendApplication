@@ -40,13 +40,12 @@ public class AuthenticationController {
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Пользователь успешно зарегистрирован"),
-            @ApiResponse(responseCode = "400", description = "Некорректные данные"),
+            @ApiResponse(responseCode = "400", description = "Некорректные данные || Пользователь уже зарегистрирован"),
             @ApiResponse(responseCode = "500", description = "Ошибка сервера")
     })
     @PostMapping("/signup")
-    public ResponseEntity<User> register(@RequestBody RegisterUserDto registerUserDto) {
-        User registeredUser = authenticationService.signup(registerUserDto);
-        return ResponseEntity.ok(registeredUser);
+    public ResponseEntity<?> register(@RequestBody RegisterUserDto registerUserDto) {
+        return new ResponseEntity<>(authenticationService.signup(registerUserDto));
     }
 
     @Operation(
