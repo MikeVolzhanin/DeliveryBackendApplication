@@ -1,9 +1,10 @@
 package ru.volzhanin.deliverybackendapplication.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.*;
 
-@Data
+@Getter
+@Setter
+@Builder
 public class UserDto {
     private String firstName;
     private String phone;

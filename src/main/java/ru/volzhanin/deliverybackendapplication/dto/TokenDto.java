@@ -1,11 +1,12 @@
 package ru.volzhanin.deliverybackendapplication.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.*;
 
-@Data
+@Getter
+@Setter
+@Builder
 @AllArgsConstructor
-public class TokenRefreshResponse{
+public class TokenDto {
     private String accessToken;
     private String refreshToken;
 }

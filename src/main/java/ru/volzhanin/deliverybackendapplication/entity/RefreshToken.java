@@ -1,11 +1,13 @@
 package ru.volzhanin.deliverybackendapplication.entity;
 
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.Date;
 
-@Data
+@Getter
+@Setter
 @Entity
 @Table(name = "refresh_token")
 public class RefreshToken {
