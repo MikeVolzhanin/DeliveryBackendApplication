@@ -32,7 +32,7 @@ public class RefreshTokenService {
         RefreshToken refreshToken = new RefreshToken();
         User user = userRepository.findById(userId).get();
 
-        if(findByUserId(user.getId()).isPresent()){
+        if (findByUserId(user.getId()).isPresent()) {
             refreshTokenRepository.deleteByUserId(userId);
         }
 
@@ -43,6 +43,7 @@ public class RefreshTokenService {
         refreshToken.setToken(UUID.randomUUID().toString());
 
         refreshToken = refreshTokenRepository.save(refreshToken);
+
         return refreshToken;
     }
 
@@ -54,7 +55,7 @@ public class RefreshTokenService {
         return token;
     }
 
-    public Optional<RefreshToken> findByUserId(Long id){
+    public Optional<RefreshToken> findByUserId(Long id) {
         return refreshTokenRepository.findByUserId(id);
     }
 }

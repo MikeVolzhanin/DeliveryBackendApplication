@@ -70,7 +70,7 @@ public class AuthenticationController {
     })
     @PostMapping("/verify")
     public ResponseEntity<?> verifyUser(@RequestBody VerifyUserDto verifyUserDto) {
-         return authenticationService.verifyUser(verifyUserDto);
+        return authenticationService.verifyUser(verifyUserDto);
     }
 
     @Operation(
