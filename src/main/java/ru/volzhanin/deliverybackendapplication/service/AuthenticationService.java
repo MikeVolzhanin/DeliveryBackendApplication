@@ -1,58 +1,68 @@
 package ru.volzhanin.deliverybackendapplication.service;
 
 import jakarta.mail.MessagingException;
+import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.thymeleaf.TemplateEngine;
+import org.thymeleaf.context.Context;
 import ru.volzhanin.deliverybackendapplication.dto.LoginUserDto;
 import ru.volzhanin.deliverybackendapplication.dto.RegisterUserDto;
+import ru.volzhanin.deliverybackendapplication.dto.TokenDto;
 import ru.volzhanin.deliverybackendapplication.dto.VerifyUserDto;
+import ru.volzhanin.deliverybackendapplication.entity.RefreshToken;
 import ru.volzhanin.deliverybackendapplication.repository.UserRepository;
 import ru.volzhanin.deliverybackendapplication.entity.User;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.Random;
-import java.util.stream.Collectors;
 
 @Service
+@AllArgsConstructor
 public class AuthenticationService {
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
-    private final EmailService emailService;
+    private final UserRepository userRepository;
+    private final DefaultEmailService emailService;
+    private final TemplateEngine templateEngine;
+    private final JwtService jwtService;
+    private final RefreshTokenService refreshTokenService;
 
-    public AuthenticationService(UserRepository userRepository, PasswordEncoder passwordEncoder, AuthenticationManager authenticationManager, EmailService emailService) {
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.authenticationManager = authenticationManager;
-        this.emailService = emailService;
-    }
+    public ResponseEntity<?> signup(RegisterUserDto input) {
+        User user = new User(
+                input.getEmail(),
+                input.getSurname(),
+                input.getMiddleName(),
+                input.getFirstName(),
+                input.getPhoneNumber(),
+                input.getPassword()
+        );
 
-    public HttpStatus signup(RegisterUserDto input) {
-        User user = new User(input.getEmail(), input.getSurname(), input.getMiddleName(), input.getFirstName(), input.getPhoneNumber(), passwordEncoder.encode(input.getPassword()));
         user.setVerificationCode(generateVerificationCode());
         user.setVerificationCodeExpiresAt(LocalDateTime.now().plusMinutes(15));
         user.setEnabled(false);
+
         if (userRepository.findByUsername(user.getUsername()).isPresent())
-            return HttpStatus.BAD_REQUEST;
+            return new ResponseEntity<>("User already exists", HttpStatus.BAD_REQUEST);
+
         sendVerificationEmail(user);
+
         userRepository.save(user);
-        return HttpStatus.OK;
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 
-    public User authenticate(LoginUserDto input) {
+    public ResponseEntity<?> authenticate(LoginUserDto input) {
         User user = userRepository.findByUsername(input.getEmail())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         if (!user.isEnabled()) {
-            throw new RuntimeException("Account not verified. Please verify your account");
+            return new ResponseEntity<>("Account not verified. Please verify your account", HttpStatus.UNAUTHORIZED);
         }
 
         authenticationManager.authenticate(
@@ -62,61 +72,59 @@ public class AuthenticationService {
                 )
         );
 
-        return user;
+        String accessToken = jwtService.generateToken(user);
+        RefreshToken refreshToken = refreshTokenService.createRefreshToken(user.getId());
+
+        return new ResponseEntity<>(new TokenDto(accessToken, refreshToken.getToken()), HttpStatus.OK);
     }
 
-    public void verifyUser(VerifyUserDto input) {
+    public ResponseEntity<?> verifyUser(VerifyUserDto input) {
         Optional<User> optionalUser = userRepository.findByUsername(input.getEmail());
 
         if (optionalUser.isPresent()) {
             User user = optionalUser.get();
             if (user.getVerificationCodeExpiresAt().isBefore(LocalDateTime.now())) {
-                throw new RuntimeException("Verification code has expired");
+                return new ResponseEntity<>("Verification code has expired", HttpStatus.BAD_REQUEST);
             }
             if (user.getVerificationCode().equals(input.getVerificationCode())) {
                 user.setEnabled(true);
                 user.setVerificationCode(null);
                 user.setVerificationCodeExpiresAt(null);
                 userRepository.save(user);
+                return new ResponseEntity<>("Account verified successfully", HttpStatus.OK);
             } else {
-                throw new RuntimeException("Invalid verification code");
+                return new ResponseEntity<>("Invalid verification code", HttpStatus.BAD_REQUEST);
             }
-        } else {
-            throw new RuntimeException("User not found");
         }
+
+        return new ResponseEntity<>("User not found", HttpStatus.BAD_REQUEST);
     }
 
-    public void resendVerificationCode(String email) {
+    public ResponseEntity<?> resendVerificationCode(String email) {
         Optional<User> optionalUser = userRepository.findByUsername(email);
         if (optionalUser.isPresent()) {
             User user = optionalUser.get();
             if (user.isEnabled()) {
-                throw new RuntimeException("Account is already verified");
+                return new ResponseEntity<>("Account is already verified", HttpStatus.BAD_REQUEST);
             }
             user.setVerificationCode(generateVerificationCode());
             user.setVerificationCodeExpiresAt(LocalDateTime.now().plusHours(1));
             sendVerificationEmail(user);
             userRepository.save(user);
-        } else {
-            throw new RuntimeException("User not found");
+            return new ResponseEntity<>("Verification code was sent successfully", HttpStatus.OK);
         }
+
+        return new ResponseEntity<>("User not found", HttpStatus.BAD_REQUEST);
     }
 
     public void sendVerificationEmail(User user) {
         String subject = "Account Verification";
         String verificationCode = user.getVerificationCode();
-        String htmlMessage = "<html>"
-                + "<body style=\"font-family: Arial, sans-serif;\">"
-                + "<div style=\"background-color: #f5f5f5; padding: 20px;\">"
-                + "<h2 style=\"color: #333;\">Welcome to our app!</h2>"
-                + "<p style=\"font-size: 16px;\">Please enter the verification code below to continue:</p>"
-                + "<div style=\"background-color: #fff; padding: 20px; border-radius: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.1);\">"
-                + "<h3 style=\"color: #333;\">Verification Code:</h3>"
-                + "<p style=\"font-size: 18px; font-weight: bold; color: #007bff;\">" + verificationCode + "</p>"
-                + "</div>"
-                + "</div>"
-                + "</body>"
-                + "</html>";
+
+
+        Context context = new Context();
+        context.setVariable("verificationCode", verificationCode);
+        String htmlMessage = templateEngine.process("verification_email.html", context);
 
         try {
             emailService.sendVerificationEmail(user.getUsername(), subject, htmlMessage);

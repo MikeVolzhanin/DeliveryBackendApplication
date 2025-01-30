@@ -6,7 +6,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import ru.volzhanin.deliverybackendapplication.entity.RefreshToken;
 import ru.volzhanin.deliverybackendapplication.entity.User;
-import ru.volzhanin.deliverybackendapplication.exceptions.TokenRefreshException;
 import ru.volzhanin.deliverybackendapplication.repository.RefreshTokenRepository;
 import ru.volzhanin.deliverybackendapplication.repository.UserRepository;
 
@@ -32,7 +31,7 @@ public class RefreshTokenService {
         RefreshToken refreshToken = new RefreshToken();
         User user = userRepository.findById(userId).get();
 
-        if(findByUserId(user.getId()).isPresent()){
+        if (findByUserId(user.getId()).isPresent()) {
             refreshTokenRepository.deleteByUserId(userId);
         }
 
@@ -43,18 +42,19 @@ public class RefreshTokenService {
         refreshToken.setToken(UUID.randomUUID().toString());
 
         refreshToken = refreshTokenRepository.save(refreshToken);
+
         return refreshToken;
     }
 
-    public RefreshToken verifyExpiration(RefreshToken token) {
+    public boolean verifyExpiration(RefreshToken token) {
         if (token.getExpiryDate().compareTo(new Date()) < 0) {
             refreshTokenRepository.delete(token);
-            throw new TokenRefreshException(token.getToken(), "Refresh token was expired. Please make a new sign in request");
+            return false;
         }
-        return token;
+        return true;
     }
 
-    public Optional<RefreshToken> findByUserId(Long id){
+    public Optional<RefreshToken> findByUserId(Long id) {
         return refreshTokenRepository.findByUserId(id);
     }
 }

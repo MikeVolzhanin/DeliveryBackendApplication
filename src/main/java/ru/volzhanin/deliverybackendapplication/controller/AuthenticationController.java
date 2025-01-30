@@ -2,20 +2,20 @@ package ru.volzhanin.deliverybackendapplication.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.volzhanin.deliverybackendapplication.dto.*;
 import ru.volzhanin.deliverybackendapplication.entity.RefreshToken;
 import ru.volzhanin.deliverybackendapplication.entity.User;
-import ru.volzhanin.deliverybackendapplication.exceptions.TokenRefreshException;
-import ru.volzhanin.deliverybackendapplication.response.LoginResponse;
 import ru.volzhanin.deliverybackendapplication.service.AuthenticationService;
 import ru.volzhanin.deliverybackendapplication.service.JwtService;
 import ru.volzhanin.deliverybackendapplication.service.RefreshTokenService;
+
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/auth")
@@ -45,7 +45,7 @@ public class AuthenticationController {
     })
     @PostMapping("/signup")
     public ResponseEntity<?> register(@RequestBody RegisterUserDto registerUserDto) {
-        return new ResponseEntity<>(authenticationService.signup(registerUserDto));
+        return authenticationService.signup(registerUserDto);
     }
 
     @Operation(
@@ -58,11 +58,8 @@ public class AuthenticationController {
             @ApiResponse(responseCode = "500", description = "Ошибка сервера")
     })
     @PostMapping("/login")
-    public ResponseEntity<TokenRefreshResponse> authenticate(@RequestBody LoginUserDto loginUserDto) {
-        User authenticatedUser = authenticationService.authenticate(loginUserDto);
-        String jwtToken = jwtService.generateToken(authenticatedUser);
-        RefreshToken refreshToken = refreshTokenService.createRefreshToken(authenticatedUser.getId());
-        return ResponseEntity.ok(new TokenRefreshResponse(jwtToken, refreshToken.getToken()));
+    public ResponseEntity<?> authenticate(@RequestBody LoginUserDto loginUserDto) {
+        return authenticationService.authenticate(loginUserDto);
     }
 
     @Operation(
@@ -76,12 +73,7 @@ public class AuthenticationController {
     })
     @PostMapping("/verify")
     public ResponseEntity<?> verifyUser(@RequestBody VerifyUserDto verifyUserDto) {
-        try {
-            authenticationService.verifyUser(verifyUserDto);
-            return ResponseEntity.ok("Account verified successfully");
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+        return authenticationService.verifyUser(verifyUserDto);
     }
 
     @Operation(
@@ -95,12 +87,7 @@ public class AuthenticationController {
     })
     @PostMapping("/resend")
     public ResponseEntity<?> resendVerificationCode(@RequestParam String email) {
-        try {
-            authenticationService.resendVerificationCode(email);
-            return ResponseEntity.ok("Verification code sent");
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+        return authenticationService.resendVerificationCode(email);
     }
 
     @Operation(
@@ -109,22 +96,30 @@ public class AuthenticationController {
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Токен успешно обновлен"),
-            @ApiResponse(responseCode = "401", description = "Недействительный refresh-токен"),
+            @ApiResponse(responseCode = "400", description = "Недействительный refresh-токен"),
             @ApiResponse(responseCode = "500", description = "Ошибка сервера")
     })
     @PostMapping("/refresh-token")
     public ResponseEntity<?> refreshToken(@RequestBody RefreshTokenRequest request) {
         String stringRequest = request.getRefreshToken();
 
-        return refreshTokenService.findByToken(stringRequest)
-                .map(refreshTokenService::verifyExpiration)
-                .map(RefreshToken::getUser)
-                .map(user -> {
-                    String token = jwtService.generateToken(authenticationService.loadUserByUsername(user.getUsername()));
-                    return ResponseEntity.ok(new TokenRefreshResponse(token, refreshTokenService.createRefreshToken(user.getId()).getToken()));
-                })
-                .orElseThrow(() -> new TokenRefreshException(stringRequest,
-                        "Refresh token is not in database!"));
+        Optional<RefreshToken> refreshToken = refreshTokenService.findByToken(stringRequest);
+
+        if(refreshToken.isEmpty()) return new ResponseEntity<>("This refresh token doesn't exist", HttpStatus.BAD_REQUEST);
+
+        if (refreshTokenService.verifyExpiration(refreshToken.get())) {
+            User user = refreshToken.get().getUser();
+
+            String newToken = jwtService.generateToken(
+                    authenticationService.loadUserByUsername(user.getUsername())
+            );
+
+            String newRefreshToken = refreshTokenService.createRefreshToken(user.getId()).getToken();
+
+            return ResponseEntity.ok(new TokenDto(newToken, newRefreshToken));
+        }
+
+        return new ResponseEntity<>("Expired refresh token", HttpStatus.BAD_REQUEST);
     }
 }
 
