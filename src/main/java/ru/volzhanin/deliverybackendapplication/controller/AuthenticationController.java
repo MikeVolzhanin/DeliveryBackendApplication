@@ -5,14 +5,17 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.volzhanin.deliverybackendapplication.dto.*;
 import ru.volzhanin.deliverybackendapplication.entity.RefreshToken;
-import ru.volzhanin.deliverybackendapplication.exceptions.TokenRefreshException;
+import ru.volzhanin.deliverybackendapplication.entity.User;
 import ru.volzhanin.deliverybackendapplication.service.AuthenticationService;
 import ru.volzhanin.deliverybackendapplication.service.JwtService;
 import ru.volzhanin.deliverybackendapplication.service.RefreshTokenService;
+
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/auth")
@@ -93,22 +96,30 @@ public class AuthenticationController {
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Токен успешно обновлен"),
-            @ApiResponse(responseCode = "401", description = "Недействительный refresh-токен"),
+            @ApiResponse(responseCode = "400", description = "Недействительный refresh-токен"),
             @ApiResponse(responseCode = "500", description = "Ошибка сервера")
     })
     @PostMapping("/refresh-token")
     public ResponseEntity<?> refreshToken(@RequestBody RefreshTokenRequest request) {
         String stringRequest = request.getRefreshToken();
 
-        return refreshTokenService.findByToken(stringRequest)
-                .map(refreshTokenService::verifyExpiration)
-                .map(RefreshToken::getUser)
-                .map(user -> {
-                    String token = jwtService.generateToken(authenticationService.loadUserByUsername(user.getUsername()));
-                    return ResponseEntity.ok(new TokenDto(token, refreshTokenService.createRefreshToken(user.getId()).getToken()));
-                })
-                .orElseThrow(() -> new TokenRefreshException(stringRequest,
-                        "Refresh token is not in database!"));
+        Optional<RefreshToken> refreshToken = refreshTokenService.findByToken(stringRequest);
+
+        if(refreshToken.isEmpty()) return new ResponseEntity<>("This refresh token doesn't exist", HttpStatus.BAD_REQUEST);
+
+        if (refreshTokenService.verifyExpiration(refreshToken.get())) {
+            User user = refreshToken.get().getUser();
+
+            String newToken = jwtService.generateToken(
+                    authenticationService.loadUserByUsername(user.getUsername())
+            );
+
+            String newRefreshToken = refreshTokenService.createRefreshToken(user.getId()).getToken();
+
+            return ResponseEntity.ok(new TokenDto(newToken, newRefreshToken));
+        }
+
+        return new ResponseEntity<>("Expired refresh token", HttpStatus.BAD_REQUEST);
     }
 }
 
