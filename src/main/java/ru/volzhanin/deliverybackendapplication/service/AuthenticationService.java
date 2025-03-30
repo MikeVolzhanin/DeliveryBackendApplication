@@ -8,6 +8,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.thymeleaf.TemplateEngine;
@@ -33,6 +34,7 @@ public class AuthenticationService {
     private final TemplateEngine templateEngine;
     private final JwtService jwtService;
     private final RefreshTokenService refreshTokenService;
+    private final BCryptPasswordEncoder passwordEncoder;
 
     public ResponseEntity<?> signup(RegisterUserDto input) {
         User user = new User(
@@ -41,14 +43,14 @@ public class AuthenticationService {
                 input.getMiddleName(),
                 input.getFirstName(),
                 input.getPhoneNumber(),
-                input.getPassword()
+                passwordEncoder.encode(input.getPassword())
         );
 
         user.setVerificationCode(generateVerificationCode());
         user.setVerificationCodeExpiresAt(LocalDateTime.now().plusMinutes(15));
         user.setEnabled(false);
 
-        if (userRepository.findByUsername(user.getUsername()).isPresent())
+        if (userRepository.findByUsername(user.getUsername()).isPresent() || userRepository.findByPhoneNumber(user.getPhoneNumber()).isPresent())
             return new ResponseEntity<>("User already exists", HttpStatus.BAD_REQUEST);
 
         sendVerificationEmail(user);
@@ -129,14 +131,14 @@ public class AuthenticationService {
         try {
             emailService.sendVerificationEmail(user.getUsername(), subject, htmlMessage);
         } catch (MessagingException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
     }
 
     @Transactional
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         return userRepository.findByUsername(username).orElseThrow(() -> new UsernameNotFoundException(
-                String.format("Пользлватель '%s' не найден", username)
+                String.format("Пользователь '%s' не найден", username)
         ));
     }
 
