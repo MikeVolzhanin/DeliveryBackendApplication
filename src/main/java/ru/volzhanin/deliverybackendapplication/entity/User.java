@@ -1,7 +1,6 @@
 package ru.volzhanin.deliverybackendapplication.entity;
 
 import jakarta.persistence.*;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -48,6 +47,9 @@ public class User implements UserDetails {
 
     @Column(name = "verification_expiration")
     private LocalDateTime verificationCodeExpiresAt;
+
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
+    private VehicleDetails vehicleDetails;
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private RefreshToken refreshToken;
