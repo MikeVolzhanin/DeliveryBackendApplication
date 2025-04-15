@@ -18,12 +18,10 @@ public class UserShift {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
-    @Column(name = "user_id")
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "shift_id", nullable = false)
-    @Column(name = "user_id")
     private Shift shift;
 
     @Column(name = "booked_at")

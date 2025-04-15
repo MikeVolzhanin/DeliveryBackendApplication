@@ -4,15 +4,11 @@ import lombok.*;
 
 @Getter
 @Setter
-@Builder
+@AllArgsConstructor
 public class UserDto {
     private String firstName;
+    private String surname;
+    private String middleName;
     private String phone;
     private String email;
-
-    public UserDto(String firstName, String phone, String email) {
-        this.firstName = firstName;
-        this.phone = phone;
-        this.email = email;
-    }
 }
