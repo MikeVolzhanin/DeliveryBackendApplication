@@ -47,8 +47,9 @@ public class Shift {
     @Column(name = "required_delivery_type", nullable = false)
     private DeliveryType requiredDeliveryType;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
-    private String status;
+    private ShiftStatus status;
 
     @OneToMany(mappedBy = "shift", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<UserShift> userShifts = new ArrayList<>();

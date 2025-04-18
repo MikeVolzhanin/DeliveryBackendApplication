@@ -23,7 +23,7 @@ public class Company {
     private String name;
 
     @Column(name = "contact_info", unique = true, nullable = false)
-    private String contectInfo;
+    private String contactInfo;
 
     @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Shift> shifts = new ArrayList<>();
