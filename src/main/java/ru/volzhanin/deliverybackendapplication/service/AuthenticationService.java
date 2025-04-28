@@ -56,7 +56,7 @@ public class AuthenticationService {
         sendVerificationEmail(user);
 
         userRepository.save(user);
-        return new ResponseEntity<>(HttpStatus.OK);
+        return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
     public ResponseEntity<?> authenticate(LoginUserDto input) {
