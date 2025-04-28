@@ -20,8 +20,7 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/auth")
 @Tag(
-        name = "Аутентификация пользователя",
-        description = "Контроллер предоставляет эндпоинты для управления процессом аутентификации пользователей, включая регистрацию, вход в систему, выход и обновление токенов."
+        name = "Аутентификация пользователя"
 )
 public class AuthenticationController {
     private final JwtService jwtService;
@@ -35,13 +34,11 @@ public class AuthenticationController {
     }
 
     @Operation(
-            summary = "Регистрация нового пользователя",
-            description = "Создает новую учетную запись пользователя на основе предоставленных данных (например, имени, почты и пароля)."
+            summary = "Регистрация нового пользователя"
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Пользователь успешно зарегистрирован"),
             @ApiResponse(responseCode = "400", description = "Некорректные данные || Пользователь уже зарегистрирован"),
-            @ApiResponse(responseCode = "500", description = "Ошибка сервера")
     })
     @PostMapping("/signup")
     public ResponseEntity<?> register(@RequestBody RegisterUserDto registerUserDto) {
@@ -49,13 +46,11 @@ public class AuthenticationController {
     }
 
     @Operation(
-            summary = "Вход пользователя в систему",
-            description = "Позволяет пользователю войти в систему, предоставив корректные учетные данные (почта и пароль)."
+            summary = "Вход пользователя в систему"
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Успешный вход, возвращает access и refersh токены "),
-            @ApiResponse(responseCode = "401", description = "Некорректные учетные данные"),
-            @ApiResponse(responseCode = "500", description = "Ошибка сервера")
+            @ApiResponse(responseCode = "401", description = "Аккаунт не верифицирован по почте"),
     })
     @PostMapping("/login")
     public ResponseEntity<?> authenticate(@RequestBody LoginUserDto loginUserDto) {
@@ -63,13 +58,11 @@ public class AuthenticationController {
     }
 
     @Operation(
-            summary = "Верификация аккаунта пользователя",
-            description = "Эндпоинт проверяет код подтверждения, отправленный на электронную почту пользователя, для завершения процесса верификации аккаунта."
+            summary = "Верификация аккаунта пользователя"
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Аккаунт успешно верифицирован"),
-            @ApiResponse(responseCode = "400", description = "Ошибка валидации данных или некорректный код подтверждения",
-                    content = @Content(mediaType = "application/json"))
+            @ApiResponse(responseCode = "400", description = "Ошибка валидации данных или некорректный код подтверждения")
     })
     @PostMapping("/verify")
     public ResponseEntity<?> verifyUser(@RequestBody VerifyUserDto verifyUserDto) {
@@ -77,13 +70,11 @@ public class AuthenticationController {
     }
 
     @Operation(
-            summary = "Повторная отправка кода верификации",
-            description = "Эндпоинт отправляет новый код верификации на указанный email пользователя, если предыдущий код истек или был утерян."
+            summary = "Повторная отправка кода верификации"
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Код верификации успешно отправлен"),
-            @ApiResponse(responseCode = "400", description = "Некорректный email или ошибка обработки запроса",
-                    content = @Content(mediaType = "application/json"))
+            @ApiResponse(responseCode = "400", description = "Некорректный email или ошибка обработки запроса")
     })
     @PostMapping("/resend")
     public ResponseEntity<?> resendVerificationCode(@RequestParam String email) {
@@ -97,7 +88,6 @@ public class AuthenticationController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Токен успешно обновлен"),
             @ApiResponse(responseCode = "400", description = "Недействительный refresh-токен"),
-            @ApiResponse(responseCode = "500", description = "Ошибка сервера")
     })
     @PostMapping("/refresh-token")
     public ResponseEntity<?> refreshToken(@RequestBody RefreshTokenRequest request) {

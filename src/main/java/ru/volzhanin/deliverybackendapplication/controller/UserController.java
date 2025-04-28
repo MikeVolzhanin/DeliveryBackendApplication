@@ -3,6 +3,7 @@ package ru.volzhanin.deliverybackendapplication.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -16,19 +17,18 @@ import ru.volzhanin.deliverybackendapplication.service.UserService;
 
 @RestController
 @RequestMapping("/user")
-@Tag(name = "Тестовый контроллер для проверки работы аутентификации",
-        description = "Контроллер предоставляет тестовый эндпоинт для получения информации о текущем аутентифицированном пользователе.")
+@Tag(name = "Управление пользователями")
 @AllArgsConstructor
 public class UserController {
     private final UserService userService;
     @Operation(
             summary = "Получение информации о текущем пользователе",
-            description = "Возвращает имя текущего аутентифицированного пользователя на основе токена, переданного в запросе."
+            description = "Возвращает информацию о текущем пользователе"
     )
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Успешное получение имени текущего пользователя"),
-            @ApiResponse(responseCode = "401", description = "Пользователь не аутентифицирован")
+            @ApiResponse(responseCode = "200", description = "Успешное получение информации о пользователе"),
     })
+    @SecurityRequirement(name = "bearerAuth")
     @GetMapping("/me")
     public ResponseEntity<UserDto> authenticatedUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -43,11 +43,27 @@ public class UserController {
         return ResponseEntity.ok().body(userDto);
     }
 
+    @Operation(
+            summary =  "Обновление данных текущего пользователя"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Данные пользователя успешно обновлёны"),
+            @ApiResponse(responseCode = "400", description = "Пользователь не найден")
+    })
+    @SecurityRequirement(name = "bearerAuth")
     @PostMapping("/me")
     public ResponseEntity<?> updateAuthenticatedUser(@RequestBody UserDto userDto) {
         return userService.updateUser(userDto);
     }
 
+    @Operation(
+            summary = "Удаление пользователя"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Пользователь успешно удалён"),
+            @ApiResponse(responseCode = "400", description = "Пользователь не найден")
+    })
+    @SecurityRequirement(name = "bearerAuth")
     @DeleteMapping("/delete-user")
     public ResponseEntity<?> deleteUser(@RequestParam String email){
         return userService.deleteUser(email);
