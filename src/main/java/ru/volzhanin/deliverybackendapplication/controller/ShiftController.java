@@ -3,6 +3,7 @@ package ru.volzhanin.deliverybackendapplication.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -29,6 +30,7 @@ public class ShiftController {
         @ApiResponse(responseCode = "201", description = "Смена успешно добавлена"),
         @ApiResponse(responseCode = "404", description = "Компания смены не найдена в системе")
     })
+    @SecurityRequirement(name = "bearerAuth")
     @PostMapping("/add")
     public ResponseEntity<?> addShift(@RequestBody ShiftDto shiftDto) {
         return shiftService.addShift(shiftDto);
@@ -40,7 +42,8 @@ public class ShiftController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Все необходимые смены успешно получены")
     })
-    @GetMapping("/available")
+    @SecurityRequirement(name = "bearerAuth")
+    @PostMapping("/available")
     public ResponseEntity<?> getAvailableShifts(@RequestBody(required = false) ShiftFilterDto shiftFilterDto) {
         return shiftService.getFilteredShifts(shiftFilterDto);
     }
@@ -52,6 +55,7 @@ public class ShiftController {
             @ApiResponse(responseCode = "200", description = "Смена успешно получена"),
             @ApiResponse(responseCode = "404", description = "Смена не найдена")
     })
+    @SecurityRequirement(name = "bearerAuth")
     @GetMapping("/{id}")
     public ResponseEntity<?> getShift(@PathVariable Long id) {
         return shiftService.getShift(id);
@@ -64,6 +68,7 @@ public class ShiftController {
             @ApiResponse(responseCode = "200", description = "Смена успешно удалена"),
             @ApiResponse(responseCode = "404", description = "Смена не найдена")
     })
+    @SecurityRequirement(name = "bearerAuth")
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<?> deleteShift(@PathVariable Long id) {
         return shiftService.deleteShift(id);
@@ -78,6 +83,7 @@ public class ShiftController {
             @ApiResponse(responseCode = "400", description = "Смена уже занята или недоступна"),
             @ApiResponse(responseCode = "409", description = "Смена уже забронирована вами")
     })
+    @SecurityRequirement(name = "bearerAuth")
     @PostMapping("/select/{id}")
     public ResponseEntity<?> selectShifts(@PathVariable Long id) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -92,9 +98,23 @@ public class ShiftController {
             @ApiResponse(responseCode = "200", description = "Бронирование смены успешно отменено"),
             @ApiResponse(responseCode = "404", description = "Бронь не найдена")
     })
+    @SecurityRequirement(name = "bearerAuth")
     @DeleteMapping("/select/{id}/cancel")
     public ResponseEntity<?> cancelShift(@PathVariable Long id, @AuthenticationPrincipal User currentUser) {
         return shiftService.cancelShift(id, currentUser);
+    }
+
+    @Operation(
+            summary = "Завершение смены"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Смена успешно завершена"),
+            @ApiResponse(responseCode = "404", description = "Бронь не найдена")
+    })
+    @SecurityRequirement(name = "bearerAuth")
+    @PostMapping("/complete/{id}")
+    public ResponseEntity<?> completeShift(@PathVariable Long id, @AuthenticationPrincipal User currentUser) {
+        return shiftService.completeShift(id, currentUser);
     }
 
     @Operation(
@@ -103,6 +123,7 @@ public class ShiftController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Успешно получены смены (или пустой массив)")
     })
+    @SecurityRequirement(name = "bearerAuth")
     @GetMapping("/selected")
     public ResponseEntity<?> getSelectedShifts(@AuthenticationPrincipal User currentUser) {
         return shiftService.getBookedShifts(currentUser);

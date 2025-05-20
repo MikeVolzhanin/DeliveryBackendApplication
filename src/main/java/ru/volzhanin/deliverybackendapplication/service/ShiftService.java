@@ -53,7 +53,7 @@ public class ShiftService {
         // Если фильтр не передан — вернём все смены
         if (filter == null) {
             return ResponseEntity.ok(
-                    shifts.stream()
+                    shifts.stream().filter(shift -> shift.getStatus() == ShiftStatus.OPEN)
                             .map(this::mapToDto)
                             .collect(Collectors.toList())
             );
@@ -146,6 +146,34 @@ public class ShiftService {
 
         return ResponseEntity.ok("Бронирование смены отменено");
     }
+
+    public ResponseEntity<?> completeShift(Long id, User currentUser) {
+        Optional<UserShift> optionalUserShift = userShiftRepository.findByUserIdAndShiftId(currentUser.getId(), id);
+
+        if (optionalUserShift.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Бронь не найдена");
+        }
+
+        UserShift userShift = optionalUserShift.get();
+        Shift shift = userShift.getShift();
+
+        // Проверка: можно ли завершить смену
+        if (!ShiftStatus.BOOKED.equals(shift.getStatus())) {
+            return ResponseEntity.badRequest().body("Смену можно завершить только если она в статусе BOOKED");
+        }
+
+        // Дополнительно можно проверить, что текущее время >= времени окончания смены
+        if (shift.getEndTime().isAfter(LocalDateTime.now())) {
+            return ResponseEntity.badRequest().body("Нельзя завершить смену до её окончания");
+        }
+
+        // Обновляем статус на COMPLETED
+        shift.setStatus(ShiftStatus.COMPLETED);
+        shiftRepository.save(shift);
+
+        return ResponseEntity.ok("Смена завершена");
+    }
+
 
     public ResponseEntity<List<ShiftDto>> getBookedShifts(User currentUser) {
         List<UserShift> userShifts = userShiftRepository.findByUserIdAndCanceledAtIsNull(currentUser.getId());
