@@ -17,4 +17,4 @@
 - **База данных**: PostgreSQL
 - **Система аутентификации**: JWT (JSON Web Tokens)
 - **API**: RESTful API
-- **Сервисы и библиотеки**: Spring Web, Spring Security, Spring Data JPA, Lombok, Java Mail Sender, Docker (для контейнеризации)
+- **Сервисы и библиотеки**: Spring Web, Spring Security, Spring Data JPA, Lombok, Java Mail Sender, Docker
